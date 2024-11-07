@@ -4,5 +4,7 @@ use utils
 
 use (
 	./day2
+	./day3
+	./fp
 	day1
 )

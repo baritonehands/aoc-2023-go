@@ -78,3 +78,35 @@ func Partition[T any](slice []T, n int, step int) iter.Seq[iter.Seq[T]] {
 	}
 	return ret
 }
+
+func PartitionFunc2[V any, U comparable](slice []V, fn func(t V) U) iter.Seq[iter.Seq2[int, V]] {
+	if len(slice) == 0 {
+		return it.Exhausted[iter.Seq2[int, V]]()
+	}
+
+	ret := it.Exhausted[iter.Seq2[int, V]]()
+	last := fn(slice[0])
+	lastI := 0
+	partition := []V{slice[0]}
+
+	endPartition := func() {
+		indexes, values := it.Collect2(it.Map2(slices.All(partition), func(idx int, v V) (int, V) {
+			return lastI + idx, v
+		}))
+		ret = it.Chain(ret, it.Once(it.Zip(slices.Values(indexes), slices.Values(values))))
+	}
+
+	for i := 1; i < len(slice); i += 1 {
+		byValue := fn(slice[i])
+		if last == byValue {
+			partition = append(partition, slice[i])
+		} else {
+			endPartition()
+			lastI = i
+			partition = []V{slice[i]}
+		}
+		last = byValue
+	}
+	endPartition()
+	return ret
+}
